@@ -5,7 +5,13 @@ import re
 from aiowinrm.sec import AuthEnum
 from aiowinrm.errors import AIOWinRMException
 from aiowinrm.sec.utils import set_kerb_pwd
+from aiowinrm.sec.windows_session import \
+    HAVE_NTLM, \
+    HAVE_KERBEROS, \
+    KERB_ENCRYPTION_AVAILABLE, \
+    NTLM_ENCRYPTION_AVAILABLE
 from aiowinrm.utils import check_url, get_url_info
+
 
 IP4_RE = re.compile(r'([01]?[0-9]?[0-9]|2[0-4][0-9]|2[5][0-5])\.{4}')
 
@@ -48,19 +54,22 @@ class ConnectionOptions(object):
 
         if isinstance(auth_method, AuthEnum):
             auth_method = auth_method.value
-        if auth_method != AuthEnum.Basic.value and not realm:
+        if auth_method == AuthEnum.Kerberos.value and not realm:
             raise AIOWinRMException(f'realm is required for {auth_method}')
 
         # pick an auth method if auto
         if auth_method == 'auto':
             host, scheme, port, path = get_url_info(winrm_url)
-            if IP4_RE.match(host):
-                if scheme == 'https':
-                    auth_method = 'basic'
-                else:
-                    auth_method = 'ntlm'
-            else:
+            if not IP4_RE.match(host) and realm and HAVE_KERBEROS and KERB_ENCRYPTION_AVAILABLE:
                 auth_method = 'kerberos'
+            elif scheme == 'https':
+                auth_method = 'basic'
+            elif HAVE_NTLM and NTLM_ENCRYPTION_AVAILABLE:
+                auth_method = 'ntlm'
+            elif allow_plain_text:
+                auth_method = 'basic'
+            else:
+                raise AIOWinRMException('Could not find a suitable auth_method')
 
         # creds
         self.realm = realm

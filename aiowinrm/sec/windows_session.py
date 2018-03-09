@@ -12,9 +12,16 @@ HAVE_KERBEROS = False
 HAVE_CREDSSP = False
 HAVE_NTLM = False
 
+KERB_ENCRYPTION_AVAILABLE = False
+NTLM_ENCRYPTION_AVAILABLE = False
 
 try:
-    from aiowinrm.sec.kerberos_ import HTTPKerberosAuth, REQUIRED, OPTIONAL, DISABLED
+    from aiowinrm.sec.kerberos_ import \
+        HTTPKerberosAuth, \
+        REQUIRED, \
+        OPTIONAL, \
+        DISABLED, \
+        KERB_ENCRYPTION_AVAILABLE
     HAVE_KERBEROS = True
 except ImportError:
     pass
@@ -23,6 +30,7 @@ except ImportError:
 try:
     from aiowinrm.sec.ntlm_ import HttpNtlmAuth
     HAVE_NTLM = True
+    NTLM_ENCRYPTION_AVAILABLE = True  # since hasattr(ntlm_auth, 'session_security') anyway
 except ImportError as ie:
     pass
 
@@ -142,8 +150,7 @@ class WindowsSession(aiohttp.ClientSession):
             )
             kerb_args = self._get_args(man_args, opt_args, HTTPKerberosAuth.__init__)
             self.auth = HTTPKerberosAuth(**kerb_args)
-            encryption_available = hasattr(self.auth, 'winrm_encryption_available') \
-                                   and self.auth.winrm_encryption_available
+            encryption_available = KERB_ENCRYPTION_AVAILABLE
         elif self.auth_method in ['certificate', 'ssl']:
             if self.auth_method == 'ssl' and not self.cert_pem and not self.cert_key_pem:
                 # 'ssl' was overloaded for HTTPS with optional certificate auth,

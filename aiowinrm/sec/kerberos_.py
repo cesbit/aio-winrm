@@ -10,6 +10,9 @@ import logging
 import re
 
 
+KERB_ENCRYPTION_AVAILABLE = hasattr(kerberos, 'authGSSWinRMEncryptMessage')
+
+
 class MutualAuthenticationError(Exception):
     """
     Mutual Authentication Error
@@ -113,7 +116,7 @@ class HTTPKerberosAuth(object):
         self.hostname_override = hostname_override
         self.sanitize_mutual_error_response = sanitize_mutual_error_response
         self.auth_done = False
-        self.winrm_encryption_available = hasattr(kerberos, 'authGSSWinRMEncryptMessage')
+        self.winrm_encryption_available = KERB_ENCRYPTION_AVAILABLE
 
         # Set the CBT values populated after the first response
         self.send_cbt = send_cbt

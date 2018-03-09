@@ -35,7 +35,7 @@ class HttpNtlmAuth(object):
 
         # This exposes the encrypt/decrypt methods used to encrypt and decrypt messages
         # sent after ntlm authentication. These methods are utilised by libraries that
-        # call requests_ntlm to encrypt and decrypt the messages sent after authentication
+        # call to encrypt and decrypt the messages sent after authentication
         self.session_security = None
 
     async def retry_using_http_NTLM_auth(self, auth_header_field, auth_header,
