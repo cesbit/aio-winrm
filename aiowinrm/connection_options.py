@@ -1,10 +1,13 @@
 import asyncio
 import aiohttp
+import re
 
 from aiowinrm.sec import AuthEnum
 from aiowinrm.errors import AIOWinRMException
 from aiowinrm.sec.utils import set_kerb_pwd
-from aiowinrm.utils import check_url
+from aiowinrm.utils import check_url, get_url_info
+
+IP4_RE = re.compile(r'([01]?[0-9]?[0-9]|2[0-4][0-9]|2[5][0-5])\.{4}')
 
 
 class ConnectionOptions(object):
@@ -48,6 +51,16 @@ class ConnectionOptions(object):
         if auth_method != AuthEnum.Basic.value and not realm:
             raise AIOWinRMException(f'realm is required for {auth_method}')
 
+        # pick an auth method if auto
+        if auth_method == 'auto':
+            host, scheme, port, path = get_url_info(winrm_url)
+            if IP4_RE.match(host):
+                if scheme == 'https':
+                    auth_method = 'basic'
+                else:
+                    auth_method = 'ntlm'
+            else:
+                auth_method = 'kerberos'
 
         # creds
         self.realm = realm

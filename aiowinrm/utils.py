@@ -16,23 +16,28 @@ STRIP_RE = re.compile("xmlns=*[\"\"][^\"\"]*[\"\"]")
 
 # Adapted from pywinrm
 def check_url(url, default_to_ssl=True):
-    match = HOST_RE.match(url)
-    scheme = match.group('scheme')
-    port = match.group('port')
+    host, scheme, port, path = get_url_info(url)
     if scheme:
         if not port:
             port = 5986 if scheme == "https" else 5985
     else:
         scheme = 'https' if default_to_ssl else 'https'
 
-    host = match.group('host')
     if not port:
         port = 5986 if default_to_ssl else 5985
-    path = match.group('path')
     if not path:
         path = 'wsman'
     return '{0}://{1}:{2}/{3}'.format(scheme, host, port, path.lstrip('/'))
 
+
+def get_url_info(url):
+    match = HOST_RE.match(url)
+    return (
+        match.group('host'),
+        match.group('scheme'),
+        match.group('port'),
+        match.group('path')
+    )
 
 REMOVE_BLANKS_PARSER = etree.XMLParser(remove_blank_text=True)
 
