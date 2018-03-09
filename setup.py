@@ -5,10 +5,9 @@ import subprocess
 
 from setuptools import setup
 
-
 MAJOR = 0
 MINOR = 1
-MICRO = 1
+MICRO = 3
 
 IS_RELEASED = False
 

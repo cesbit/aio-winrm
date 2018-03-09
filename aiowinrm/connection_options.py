@@ -63,7 +63,7 @@ class ConnectionOptions(object):
             if not IP4_RE.match(host) and realm and HAVE_KERBEROS and KERB_ENCRYPTION_AVAILABLE:
                 auth_method = 'kerberos'
             elif scheme == 'https':
-                auth_method = 'basic'
+                auth_method = 'ntlm' if HAVE_NTLM else 'basic'
             elif HAVE_NTLM and NTLM_ENCRYPTION_AVAILABLE:
                 auth_method = 'ntlm'
             elif allow_plain_text:
