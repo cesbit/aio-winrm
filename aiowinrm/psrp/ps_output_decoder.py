@@ -59,11 +59,11 @@ class PsOutputDecoder(object):
         assert isinstance(err_msg, ErrorRecord)
         fq_err_id = err_msg.fully_qualified_error_id
         if fq_err_id == 'Microsoft.PowerShell.Commands.WriteErrorException':
-            text = cls.fmt_err(f'{err_msg.invocation_info["line"]}: '
+            text = cls.fmt_err(f'{err_msg.invocation_info.get("Line", "")}: '
                                f'{err_msg.exception_message}',
                                err_msg)
         elif fq_err_id == 'NativeCommandError':
-            text = cls.fmt_err(f'{err_msg.invocation_info["my_command"]}: '
+            text = cls.fmt_err(f'{err_msg.invocation_info.get("MyCommand", "")}: '
                                f'{err_msg.exception_message}',
                                err_msg)
         elif fq_err_id == 'NativeCommandErrorMessage':
@@ -71,7 +71,7 @@ class PsOutputDecoder(object):
                                err_msg)
         else:
             text = cls.fmt_err(f'{err_msg.exception_message}\r\n'
-                               f'{err_msg.invocation_info["position_message"]}',
+                               f'{err_msg.invocation_info.get("PositionMessage", "")}',
                                err_msg)
         return OutStream(StreamTypeEnum.STD_ERR,
                          strip_hex_white_space(text))
