@@ -1,10 +1,12 @@
 import uuid
 
-from aiowinrm.errors import SoapTimeout, AIOWinRMException
+from aiowinrm.errors import AIOWinRMException
+from aiowinrm.psrp.defragmenter import MessageDefragmenter
 from aiowinrm.psrp.fragmenter import Fragmenter
 from aiowinrm.psrp.messages import \
     create_session_capability_message, init_runspace_pool_message, \
     create_pipeline_message
+from aiowinrm.psrp.ps_pipeline_reader import PipelineReader
 from aiowinrm.psrp.ps_response_reader import PsResponseReader
 from aiowinrm.soap.protocol import \
     create_power_shell_payload, parse_create_shell_response, get_ps_response, \
@@ -51,11 +53,15 @@ class PowerShellContext(object):
             self.shell_id = parse_create_shell_response(response)
 
             get_ps_response_payload = get_ps_response(self.shell_id, self.session_id)
+            defragmenter = MessageDefragmenter()
             while not self._ps_reader.opened and not self._ps_reader.exited:
                 # print('requesting')
                 response = await self._win_rm_connection.request(get_ps_response_payload)
-                self._ps_reader.read_wsmv_message(response)
-
+                stream_gen = self._ps_reader.read_wsmv_message(response)
+                message_gen = self._ps_reader.read_streams(stream_gen, defragmenter)
+                # consume messages
+                for _ in message_gen:
+                    pass
             return self
         except Exception as ex:
             await self.__aexit__(ex=ex)
@@ -82,24 +88,28 @@ class PowerShellContext(object):
                                                   command_id,
                                                   fragment.get_bytes())
                     await self._win_rm_connection.request(payload)
-            return command_id
+            return PipelineReader(command_id)
         except Exception as ex:
             await self.__aexit__(ex=ex)
             raise
 
     def _check_pipeline_state(self):
         if not self._ps_reader.opened:
-            raise AIOWinRMException('Pipeline not yet opened')
+            raise AIOWinRMException('Runspace not yet opened')
         if self._ps_reader.exited:
-            raise AIOWinRMException('Pipeline already exited')
+            raise AIOWinRMException('Runspace already exited')
 
-    async def get_command_output(self, command_id):
+    async def read_pipeline(self, pipeline):
+        assert isinstance(pipeline, PipelineReader)
         try:
             self._check_pipeline_state()
-            payload = command_output(self.shell_id, command_id, power_shell=True)
-            data = await self._win_rm_connection.request(payload)
-            self._ps_reader.read_wsmv_message(data)
-            return self._ps_reader.get_response()
+            payload = command_output(self.shell_id, pipeline.command_id, power_shell=True)
+            response = await self._win_rm_connection.request(payload)
+            pipeline.read_command_state(response)
+            stream_gen = self._ps_reader.read_wsmv_message(response)
+            message_gen = self._ps_reader.read_streams(stream_gen, pipeline.defragmenter)
+            for message in message_gen:
+                pipeline.on_message(message)
         except Exception as ex:
             await self.__aexit__(ex=ex)
             raise

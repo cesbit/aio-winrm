@@ -13,6 +13,9 @@ def test_bit(int_type, offset):
 
 class MessageDefragmenter(object):
 
+    def __init__(self):
+        self.object_bytes = {}
+
     @classmethod
     def fragment_from(cls, byte_string):
         """
@@ -33,8 +36,8 @@ class MessageDefragmenter(object):
         # :object_id, :fragment_id, :end_fragment, :start_fragment, :blob
         end_start = byte_string[16]
         return Fragment(
-            object_id=struct.unpack('Q', byte_string[:8][::-1]),
-            fragment_id=struct.unpack('Q', byte_string[8:16][::-1]),
+            object_id=struct.unpack('Q', byte_string[:8][::-1])[0],
+            fragment_id=struct.unpack('Q', byte_string[8:16][::-1])[0],
             end_fragment=test_bit(end_start, 1),
             start_fragment=test_bit(end_start, 0),
             blob=byte_string[21:]
@@ -70,21 +73,22 @@ class MessageDefragmenter(object):
             stream_bytes = base64.b64decode(stream_data)
             yield steam_type, cls.fragment_from(stream_bytes)
 
-    @classmethod
-    def streams_to_messages(cls, streams):
+    def streams_to_messages(self, streams):
         stream_messages = {}
-        cur_message_bytes = None
-        for stream_type, fragment in cls.streams_to_fragments(streams):
+        for stream_type, fragment in MessageDefragmenter.streams_to_fragments(streams):
+            print(f'Fragment O:{fragment.object_id} F:{fragment.fragment_id} '
+                  f'S:{bool(fragment.start_fragment)}: E:{bool(fragment.end_fragment)}')
             if stream_type not in stream_messages:
                 stream_messages[stream_type] = []
 
             if fragment.start_fragment:
-                cur_message_bytes = fragment.blob
+                self.object_bytes[fragment.object_id] = fragment.blob
             else:
-                cur_message_bytes += fragment.blob
+                self.object_bytes[fragment.object_id] += fragment.blob
 
             if fragment.end_fragment:
-                message = cls.message_from(cur_message_bytes)
+                byts = self.object_bytes.pop(fragment.object_id)
+                message = MessageDefragmenter.message_from(byts)
                 decoded = PsOutputDecoder.decode(message)
                 stream_messages[stream_type].append(decoded)
 

@@ -58,12 +58,8 @@ async def run_psrp(connection_options,
     """
     check_for_bom(script)
     async with PowerShellContext(connection_options) as pwr_shell_context:
-        stdout_buffer, stderr_buffer = [], []
-        command_id = await pwr_shell_context.start_script(script)
-        exit_code = None
-        while exit_code is None:
-            res = await pwr_shell_context.get_command_output(command_id)
-            std_out, std_err, exit_code = res
-            stdout_buffer.append(std_out)
-            stderr_buffer.append(std_err)
-    return ''.join(stdout_buffer), ''.join(stderr_buffer), exit_code
+        pipeline = await pwr_shell_context.start_script(script)
+        while not pipeline.exited:
+            await pwr_shell_context.read_pipeline(pipeline)
+    std_out, std_err = pipeline.get_output()
+    return std_out, std_err, pipeline.exit_code

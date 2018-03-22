@@ -71,4 +71,5 @@ def strip_hex_white_space(text):
     if not text:
         return ''
     text = text.replace("_x000D__x000A_", "\n")
+    text = text.replace("                   ~_x000A_", "")
     return re.sub(r'_x(\s{4})_', horizontal_white_space_replace, text, flags=re.UNICODE)
