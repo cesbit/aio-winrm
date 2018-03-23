@@ -27,7 +27,8 @@ async def run_cmd(connection_options,
 
 
 async def run_ps(connection_options,
-                 script):
+                 script,
+                 execution_policy=None):
     """
     run PowerShell script over cmd+powershell
 
@@ -37,8 +38,12 @@ async def run_ps(connection_options,
     """
     check_for_bom(script)
     encoded_ps = b64encode(script.encode('utf_16_le')).decode('ascii')
+    if execution_policy is None:
+        command = f'powershell -encodedcommand {encoded_ps}'
+    else:
+        command = f'powershell -ExecutionPolicy {execution_policy} -encodedcommand {encoded_ps}'
     res = await run_cmd(connection_options,
-                        command=f'powershell -encodedcommand {encoded_ps}')
+                        command=command)
     stdout, stderr, return_code = res
     if stderr:
         # if there was an error message, clean it it up and make it human

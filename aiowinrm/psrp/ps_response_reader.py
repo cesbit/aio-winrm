@@ -17,7 +17,6 @@ class PsResponseReader(object):
         self._closed = False
 
     def read_wsmv_message(self, message_node):
-        print('WSMV message')
         soap_stream_gen = get_streams(message_node)
         return soap_stream_gen
 

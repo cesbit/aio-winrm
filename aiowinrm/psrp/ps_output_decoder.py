@@ -47,7 +47,9 @@ class PsOutputDecoder(object):
             if isinstance(decoded, PipelineOutput):
                 return OutStream(StreamTypeEnum.STD_OUT, decoded.output)
             elif isinstance(decoded, HostCall):
-                return OutStream(*cls.decode_call(decoded))
+                tup = cls.decode_call(decoded)
+                if tup:
+                    return OutStream(*tup)
             elif isinstance(decoded, ErrorRecord):
                 return cls.decode_error_record(decoded)
             elif isinstance(decoded, PipelineState) \

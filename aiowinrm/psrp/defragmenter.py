@@ -76,8 +76,8 @@ class MessageDefragmenter(object):
     def streams_to_messages(self, streams):
         stream_messages = {}
         for stream_type, fragment in MessageDefragmenter.streams_to_fragments(streams):
-            print(f'Fragment O:{fragment.object_id} F:{fragment.fragment_id} '
-                  f'S:{bool(fragment.start_fragment)}: E:{bool(fragment.end_fragment)}')
+            # print(f'Fragment O:{fragment.object_id} F:{fragment.fragment_id} '
+            #       f'S:{bool(fragment.start_fragment)}: E:{bool(fragment.end_fragment)}')
             if stream_type not in stream_messages:
                 stream_messages[stream_type] = []
 
