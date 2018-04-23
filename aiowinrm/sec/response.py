@@ -33,3 +33,4 @@ class AioWinRmResponseClass(aiohttp.ClientResponse):
 
     def set_content(self, content):
         self._content = content
+        self._body = content

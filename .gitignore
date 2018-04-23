@@ -7,4 +7,4 @@ aiowinrm/xml/*
 aiowinrm.egg-info
 build/*
 dist/*
-example_nogit.py
+*_nogit.py
