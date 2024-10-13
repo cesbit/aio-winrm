@@ -6,7 +6,7 @@ class PreparedRequest(object):
     def __init__(self, url, headers, data, session=None, method=None):
         self.url = url
         self.headers = headers
-        self.data = data
+        self.data = data[0] if isinstance(data, tuple) else data
         self.session = session
         self.method = method
 
